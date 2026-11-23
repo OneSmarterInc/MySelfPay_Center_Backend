@@ -10,7 +10,7 @@
 | Requests | Search/filter/sort/pagination, staff manual confirmation, immutable booking price, safe duplicate confirmation |
 | Pricing | Owner-only reviewed changes, expected-version conflict protection, old/new price and actor/reason history |
 | Outreach | Owner-only targets, notes, status, paginated history; external rate-sheet sharing can be recorded |
-| Patient | Consented self-pay link, price snapshot, up to three preferences, request queue, private status/confirmation; QR referral request |
+| Patient | Consented self-pay link, price snapshot, exactly three date-and-period preferences, request queue, private status/confirmation; QR referral request |
 | Estimates | Immutable versioned DRAFT records from the booking snapshot, printable draft output; no GFE issuance |
 | Referral pad | Real QR code pointing at configured frontend origin and center referral page, printable layout |
 | Owner summaries | Saved-data counts; no invented collected revenue |
@@ -25,7 +25,7 @@ The following require external information/configuration or review and have not 
 3. Production email provider and domain. SMTP adapter is implemented but unconfigured. SMS transport, retries/delivery callbacks and notifications are not implemented against a provider.
 4. Public MySelfPay offer publishing, verified market/ZIP/hospital feeds, weekly target sourcing and revenue reports. Local price saves do not update the live website.
 5. Stripe owner subscription account/product/customer mapping, integration and webhook/retry policy. Subscription UI remains unconnected. Patient payment is entirely out of scope.
-6. Approved official GFE template, provider identifiers, itemization, timing and delivery. Drafts cannot be issued as compliant GFEs. Patient summaries explicitly say this.
+6. Obtain the exact GFE wording/template reported as verified by the project owner; map provider identifiers and itemization, and implement timing and delivery. Drafts cannot be issued as compliant GFEs. Patient summaries explicitly say this.
 7. Scheduled digest email generation/delivery, admin MFA recovery, real center contact/resource data and final permission mapping.
 8. AWS/domain/secrets/HTTPS/proxy/database TLS setup, operational logging with token redaction, backup/retention and deployment checks. No deployment performed.
 9. Browser interaction/visual acceptance, production Python 3.12 execution and PostgreSQL concurrent-write testing.
@@ -50,8 +50,8 @@ The isolated host uses Django SessionAuthentication and X-CSRFToken. Integrate w
 - GET `/centers/:center/offers`; GET/POST `/offers/:id` `{price,expected_version,reason}`; GET `/offers/:id/history`.
 - GET `/centers/:center/outreach`; GET `/outreach/:id`; GET/POST `/outreach/:id/activities` `{kind,note}`.
 - GET `/centers/:center/rescue/offers`; POST `/rescue` `{offer_id,consent}` creates a seven-day bearer link and explicitly returns `delivery:not_sent`.
-- GET/POST `/patient/:token` is bearer-authorized without account login; POST accepts `{patient_name,preferred_windows}`. Repeated POST returns the existing request. Price and center come from the link, not the payload.
-- GET/POST `/referral/:center` is public; POST validates `{offer_id,patient_name,preferred_windows}` and returns an unguessable status link. Do not log or share bearer tokens.
+- GET/POST `/patient/:token` is bearer-authorized without account login; POST accepts `{patient_name,preferences}`. Repeated POST returns the existing request. Price and center come from the link, not the payload.
+- GET/POST `/referral/:center` is public; POST validates `{offer_id,patient_name,preferences}` and returns an unguessable status link. Do not log or share bearer tokens.
 - GET/POST `/centers/:center/requests/:booking/estimates` returns/creates immutable draft versions.
 - GET `/centers/:center/referrals`, `/market`, `/subscription`, `/digest`.
 
@@ -59,16 +59,7 @@ History and list endpoints use `{count,next,previous,results}` where paginated. 
 
 ## Current validation
 
-39 backend tests; 5 frontend API-client tests; production frontend build; no pending model migrations; live local API smoke flow passed. These do not replace browser QA or production integration/concurrency tests.
-
-
-### Patient slot choices
-Patient and referral submissions now require `preferred_slot_ids`: exactly three distinct future slot IDs belonging to the center. GET patient/referral responses include public slot metadata (no appointment identities). The legacy `preferred_windows` field is retained for existing data but does not authorize confirmation. Import integrations must map patient choices to local slot IDs.
-
-Staff requests `/centers/{id}/slots?booking_id={booking_id}` to receive only submitted choices, availability flags, overlap counts, and up to five overlapping appointment references per choice. Confirmation rejects unsubmitted slots and rechecks same-resource overlaps under the existing center lock. Legacy requests need new specific choices; their free-text windows are never automatically converted. The local demo seed assigns synthetic choices only to pending DEMO requests.
-
-Patient preference update: The patient UI now sends preferred_times (three distinct future local ISO date/time strings interpreted in the center timezone), independent of pre-created slots. These are stored as UTC timestamps in preferred_windows. preferred_slot_ids remains accepted for backward compatibility. Staff matching uses the requested start time and existing center resources; unmatched times are shown as requiring availability setup, with no invented duration. Confirmation must match either a legacy submitted slot ID or a stored preferred timestamp. Public responses no longer send the slot directory.
-
+54 backend tests; 8 frontend tests; production frontend build; no pending model migrations. These do not replace browser QA or production integration/concurrency tests. See [DEVELOPER_HANDOFF.md](DEVELOPER_HANDOFF.md) for the completion sequence and acceptance criteria.
 
 ## Patient date and period preferences
 New patient and referral submissions use `preferences`, exactly three distinct objects:

@@ -1,6 +1,6 @@
 # MySelfPay Center Pro backend
 
-Django 5.2.18 + DRF 3.18.3 module, with Python 3.12 / PostgreSQL as the upstream-compatible production target. Current local checks used Python 3.14 and isolated SQLite. No company repository or database was modified.
+Django 5.2.18 + DRF 3.18.3 module, with Python 3.12 / PostgreSQL as the upstream-compatible production target. Current local checks used Python 3.14 and isolated SQLite. The Center Pro implementation is published separately; the existing MySelfPay application and company database were not modified.
 
 ## First setup (PowerShell)
 
@@ -49,3 +49,7 @@ Legacy `center_pro/holds.py` and `tests/test_holds.py` are obsolete earlier expe
 54 tests pass (2026-11-23). A live Vite-proxy API smoke flow also passed: consented link -> patient request -> staff confirmation -> private patient status -> estimate draft, plus owner/admin reads. PostgreSQL simultaneous-write and Python 3.12 runtime validation remain release gates.
 
 See INTEGRATION.md for endpoint contracts and incomplete external dependencies.
+
+## Developer handoff
+
+Start with [DEVELOPER_HANDOFF.md](DEVELOPER_HANDOFF.md) for remaining tasks, integration order, API payloads and release acceptance criteria.
